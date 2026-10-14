@@ -17,7 +17,8 @@ only on the `hivemind` network as `hive-browser:9223` and is never published.
 
 ## Tests
 
-    HIVE_PYTHON=<python with the hive's requirements> /opt/venv/bin/python -m pytest
+    python3 -m venv /tmp/hivevenv && /tmp/hivevenv/bin/pip install -r /mnt/dev/hive/requirements.txt
+    HIVE_PYTHON=/tmp/hivevenv/bin/python /opt/venv/bin/python -m pytest
 
 The hive sign-in tests start a real hive site from `HIVE_SRC`
 (default /mnt/dev/hive/src) on a throwaway database.
