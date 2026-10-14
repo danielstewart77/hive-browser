@@ -120,3 +120,12 @@ def test_headed_mode_with_no_visible_browser_says_how_to_start_it():
     from conftest import free_port
     with pytest.raises(SystemExit, match="hive-browser container"):
         browse.start(headed=True, cdp_url=f"http://127.0.0.1:{free_port()}")
+
+
+def test_the_visible_browser_is_addressed_by_ip_because_chromium_refuses_a_name():
+    """Chromium's debugging port rejects a Host header that is a name, and the
+    container is only known by its name, so the name is sent as its address."""
+    import socket
+    name = socket.gethostname()
+    address = socket.gethostbyname(name)
+    assert browse._by_address(f"http://{name}:9223") == f"http://{address}:9223"

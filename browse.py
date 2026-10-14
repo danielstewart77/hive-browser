@@ -73,7 +73,7 @@ def start(*, phone: bool = False, headed: bool = False, cdp_url: str | None = No
     profile = PHONE if phone else DESKTOP
     try:
         if headed:
-            url = cdp_url or os.getenv("HIVE_BROWSER_CDP", DEFAULT_CDP)
+            url = _by_address(cdp_url or os.getenv("HIVE_BROWSER_CDP", DEFAULT_CDP))
             try:
                 browser = pw.chromium.connect_over_cdp(url)
             except Exception as exc:
@@ -98,6 +98,29 @@ def start(*, phone: bool = False, headed: bool = False, cdp_url: str | None = No
         pw.stop()
         raise
     return Session(page=page, context=context, browser=browser, headed=headed, _pw=pw, keep=keep)
+
+
+def _by_address(url: str) -> str:
+    """Chromium's debugging endpoint answers only to an IP address or
+    localhost in the Host header — a DNS-rebinding guard — so the container
+    name is resolved here rather than sent."""
+    import socket
+    from urllib.parse import urlsplit, urlunsplit
+    parts = urlsplit(url)
+    host = parts.hostname or ""
+    try:
+        socket.inet_aton(host)
+        return url
+    except OSError:
+        pass
+    if host == "localhost":
+        return url
+    try:
+        address = socket.gethostbyname(host)
+    except OSError:
+        return url  # let the connect fail and report the name it was given
+    netloc = address + (f":{parts.port}" if parts.port else "")
+    return urlunsplit(parts._replace(netloc=netloc))
 
 
 def emulate_phone(page: Page) -> None:
