@@ -1,0 +1,38 @@
+# The visible browser Cypher drives and Daniel watches.
+#
+#   docker compose -f /home/daniel/Storage/Dev/hive-browser/container/compose.yaml up -d --build
+#
+# noVNC is published for Caddy (browser.sparktobloom.com, behind Cloudflare
+# Access) on the host's LAN address only, because noVNC itself has no
+# password: anything that reaches this port has mouse and keyboard on a
+# browser signed in to hive. Set HIVE_BROWSER_BIND to the address Caddy
+# proxies to; nothing else on the LAN should be able to route to it, so
+# firewall the port to Caddy's host if Caddy runs elsewhere. The debugging port is NOT published: it is reachable
+# only on the hivemind network as hive-browser:9223, because whoever reaches
+# it owns the browser and every session signed in to it.
+services:
+  hive-browser:
+    build: .
+    container_name: hive-browser
+    restart: unless-stopped
+    init: true
+    shm_size: "1gb"
+    environment:
+      # Typed once into noVNC on each device; it remembers it. Required, so
+      # the container refuses to start without one rather than run open.
+      - VNC_PASSWORD=${HIVE_BROWSER_VNC_PASSWORD:?set HIVE_BROWSER_VNC_PASSWORD in container/.env}
+    ports:
+      - "${HIVE_BROWSER_BIND:-192.168.4.64}:8712:6080"
+    volumes:
+      # Logins and cookies survive a restart.
+      - hive-browser-profile:/profile
+    networks:
+      - hivemind
+
+volumes:
+  hive-browser-profile:
+
+networks:
+  hivemind:
+    external: true
+    name: hivemind
